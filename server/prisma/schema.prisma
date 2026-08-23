@@ -1,0 +1,184 @@
+// Prisma schema for Gamified Daily Tasks
+// Run `npx prisma migrate dev --name init` after setting DATABASE_URL to create these tables.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TaskType {
+  QUIZ
+  PHOTO
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// A registered account. totalXp is a running total kept in sync by the XP
+// service (inside a transaction) so we don't have to SUM xpTransactions on
+// every request just to render a profile or leaderboard.
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  avatarUrl    String?
+  totalXp      Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  taskCompletions   TaskCompletion[]
+  quizAttempts      QuizAttempt[]
+  photoSubmissions  PhotoSubmission[]
+  userAchievements  UserAchievement[]
+  xpTransactions    XpTransaction[]
+  reviewedSubmissions PhotoSubmission[] @relation("ReviewedBy")
+
+  @@index([totalXp])
+}
+
+// A task is the "definition" of something a user can do - either a quiz
+// (auto-graded) or a photo task (manually reviewed). xpValue lives here so
+// it's configurable from the database instead of hard-coded in the app.
+model Task {
+  id          Int      @id @default(autoincrement())
+  type        TaskType
+  title       String
+  description String?
+  category    String? // e.g. "housework", "fitness", "general-knowledge"
+  xpValue     Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  quizQuestions   QuizQuestion[]
+  taskCompletions TaskCompletion[]
+  photoSubmissions PhotoSubmission[]
+
+  @@index([type, isActive])
+}
+
+// One question that belongs to a QUIZ-type task. options is stored as JSON
+// (array of strings) since Postgres supports a native json/jsonb type and it
+// saves us a separate QuizOptions table for something this simple.
+model QuizQuestion {
+  id            Int      @id @default(autoincrement())
+  taskId        Int
+  question      String
+  correctAnswer String
+  options       Json // e.g. ["Option A", "Option B", "Option C", "Option D"]
+  createdAt     DateTime @default(now())
+
+  task         Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  quizAttempts QuizAttempt[]
+
+  @@index([taskId])
+}
+
+// Records every quiz question a user has answered - both to grade it and to
+// know which questions to exclude next time so they don't see repeats.
+model QuizAttempt {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  quizQuestionId Int
+  taskId         Int
+  isCorrect      Boolean
+  answeredAt     DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizQuestion QuizQuestion @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, taskId])
+  @@index([userId, quizQuestionId])
+}
+
+// One row per task a user has successfully completed (quiz passed, or photo
+// approved). The unique constraint stops a user completing the exact same
+// task twice and farming double XP - the backend checks this before granting XP.
+model TaskCompletion {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  taskId      Int
+  xpAwarded   Int
+  completedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+  @@index([userId])
+}
+
+// A photo submitted as proof for a PHOTO-type task. Starts PENDING and only
+// grants XP (via a TaskCompletion + XpTransaction) once an admin approves it.
+model PhotoSubmission {
+  id           Int              @id @default(autoincrement())
+  userId       Int
+  taskId       Int
+  photoUrl     String
+  status       SubmissionStatus @default(PENDING)
+  reviewedById Int?
+  reviewedAt   DateTime?
+  submittedAt  DateTime         @default(now())
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task       Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ReviewedBy", fields: [reviewedById], references: [id])
+
+  @@index([status])
+  @@index([userId])
+}
+
+// Defines an unlockable achievement. unlockCondition is JSON so new
+// achievement types can be added later without a schema/migration change -
+// e.g. {"type":"xp","value":1000} or {"type":"tasksCompleted","value":10}.
+model Achievement {
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String
+  icon            String? // emoji or icon name, UI's choice
+  unlockCondition Json
+  createdAt       DateTime @default(now())
+
+  userAchievements UserAchievement[]
+}
+
+// Join table recording which users have unlocked which achievements, and when.
+model UserAchievement {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  achievementId Int
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+// An append-only ledger of every XP change. This is the source of truth for
+// "why does this user have this much XP" - useful for debugging and for
+// building things like a weekly leaderboard (SUM xp WHERE createdAt > start of week).
+model XpTransaction {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Int
+  reason    String // e.g. "task_completed:12", "photo_approved:7"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
