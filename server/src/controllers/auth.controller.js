@@ -5,7 +5,7 @@ const prisma = require('../config/prisma');
 const COOKIE_OPTIONS = {
   httpOnly: true, // client-side JS can't read this cookie - blocks XSS token theft
   secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-  sameSite: 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, keep in sync with JWT_EXPIRES_IN
 };
 
