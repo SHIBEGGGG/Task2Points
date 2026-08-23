@@ -15,10 +15,12 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173'].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true, // required so the browser sends/receives the httpOnly cookie
+    origin: allowedOrigins,
+    credentials: true,
   })
 );
 app.use(express.json());
