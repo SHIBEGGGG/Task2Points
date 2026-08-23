@@ -9,16 +9,31 @@ import PhotoUploadWidget from '../components/PhotoUploadWidget.jsx';
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   async function loadTasks() {
-    const res = await api.get('/tasks');
-    setTasks(res.data);
-    setLoading(false);
+    try {
+      const res = await api.get('/tasks');
+      setTasks(res.data);
+    } catch (err) {
+      setError('Could not load quests. Try refreshing.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     loadTasks();
   }, []);
+
+  if (error) {
+    return (
+      <Layout>
+        <p className="text-coral">{error}</p>
+      </Layout>
+    );
+  }
+
 
   if (loading) {
     return (

@@ -7,10 +7,22 @@ import XPBar from '../components/XPBar.jsx';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/users/me').then((res) => setProfile(res.data));
+    api
+      .get('/users/me')
+      .then((res) => setProfile(res.data))
+      .catch(() => setError('Could not load your profile. Try refreshing.'));
   }, []);
+
+  if (error) {
+    return (
+      <Layout>
+        <p className="text-coral">{error}</p>
+      </Layout>
+    );
+  }
 
   if (!profile) {
     return (

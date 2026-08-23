@@ -11,14 +11,17 @@ export default function Leaderboard() {
   const [view, setView] = useState('all-time');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setLoading(true);
+    setError('');
     const endpoint = view === 'weekly' ? '/leaderboard/weekly' : '/leaderboard';
-    api.get(endpoint).then((res) => {
-      setRows(res.data);
-      setLoading(false);
-    });
+    api
+      .get(endpoint)
+      .then((res) => setRows(res.data))
+      .catch(() => setError('Could not load the leaderboard. Try refreshing.'))
+      .finally(() => setLoading(false));
   }, [view]);
 
   return (
@@ -45,7 +48,9 @@ export default function Leaderboard() {
         </div>
       </div>
 
-      {loading ? (
+      {error ? (
+        <p className="text-coral">{error}</p>
+      ) : loading ? (
         <p className="font-mono text-parchment/50">Loading rankings…</p>
       ) : (
         <div className="space-y-2">

@@ -14,21 +14,36 @@ export default function Dashboard() {
   const [todaysTasks, setTodaysTasks] = useState([]);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function load() {
-      const [profileRes, tasksRes, mineRes] = await Promise.all([
-        api.get('/users/me'),
-        api.get('/tasks/today'),
-        api.get('/submissions/mine'),
-      ]);
-      setProfile(profileRes.data);
-      setTodaysTasks(tasksRes.data);
-      setPendingSubmissions(mineRes.data.filter((s) => s.status === 'PENDING'));
-      setLoading(false);
+      try {
+        const [profileRes, tasksRes, mineRes] = await Promise.all([
+          api.get('/users/me'),
+          api.get('/tasks/today'),
+          api.get('/submissions/mine'),
+        ]);
+        setProfile(profileRes.data);
+        setTodaysTasks(tasksRes.data);
+        setPendingSubmissions(mineRes.data.filter((s) => s.status === 'PENDING'));
+      } catch (err) {
+        setError('Could not load your dashboard. Try refreshing.');
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
+
+  if (error) {
+    return (
+      <Layout>
+        <p className="text-coral">{error}</p>
+      </Layout>
+    );
+  }
+
 
   if (loading) {
     return (

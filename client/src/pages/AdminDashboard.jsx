@@ -8,16 +8,23 @@ export default function AdminDashboard() {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState(null);
+  const [error, setError] = useState('');
 
   async function loadAll() {
     setLoading(true);
-    const [statsRes, pendingRes] = await Promise.all([
-      api.get('/admin/stats'),
-      api.get('/admin/submissions'),
-    ]);
-    setStats(statsRes.data);
-    setPending(pendingRes.data);
-    setLoading(false);
+    setError('');
+    try {
+      const [statsRes, pendingRes] = await Promise.all([
+        api.get('/admin/stats'),
+        api.get('/admin/submissions'),
+      ]);
+      setStats(statsRes.data);
+      setPending(pendingRes.data);
+    } catch (err) {
+      setError('Could not load the admin console. Try refreshing.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -29,6 +36,14 @@ export default function AdminDashboard() {
     await api.put(`/admin/submissions/${id}/${decision}`);
     await loadAll();
     setReviewingId(null);
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <p className="text-coral">{error}</p>
+      </Layout>
+    );
   }
 
   if (loading) {

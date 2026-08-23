@@ -7,13 +7,23 @@ import AchievementCard from '../components/AchievementCard.jsx';
 export default function Achievements() {
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/achievements').then((res) => {
-      setAchievements(res.data);
-      setLoading(false);
-    });
+    api
+      .get('/achievements')
+      .then((res) => setAchievements(res.data))
+      .catch(() => setError('Could not load achievements. Try refreshing.'))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (error) {
+    return (
+      <Layout>
+        <p className="text-coral">{error}</p>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
