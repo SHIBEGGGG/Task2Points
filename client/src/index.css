@@ -1,3 +1,108 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ink text-parchment font-body antialiased;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(232, 178, 61, 0.08), transparent),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-wide;
+  }
+
+  ::selection {
+    @apply bg-gold/40 text-parchment-text;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .quest-ticket {
+    @apply relative flex bg-parchment text-parchment-text rounded-lg overflow-hidden;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 10px 24px rgba(0,0,0,0.35);
+  }
+
+  .quest-ticket__stub {
+    @apply relative flex flex-col items-center justify-center gap-2 w-20 shrink-0 bg-ink-light text-parchment px-2 py-4;
+  }
+
+  .quest-ticket__seam {
+    @apply relative w-0 border-l-2 border-dashed border-ink/30;
+  }
+
+  .quest-ticket__seam::before,
+  .quest-ticket__seam::after {
+    content: '';
+    @apply absolute w-4 h-4 rounded-full bg-ink left-1/2 -translate-x-1/2;
+  }
+  .quest-ticket__seam::before { top: -8px; }
+  .quest-ticket__seam::after { bottom: -8px; }
+
+  .quest-ticket__body {
+    @apply flex-1 p-4;
+  }
+
+  .quest-ticket--locked {
+    @apply bg-parchment-dim opacity-70;
+  }
+
+  .stamp {
+    @apply absolute top-3 right-3 border-4 rounded-md px-3 py-1 font-display text-sm tracking-widest -rotate-12 pointer-events-none select-none;
+  }
+  .stamp--approved {
+    @apply border-sage text-sage;
+  }
+  .stamp--rejected {
+    @apply border-coral text-coral;
+  }
+  .stamp--pending {
+    @apply border-gold text-gold;
+  }
+
+  .xp-track {
+    @apply relative h-4 w-full rounded-full bg-ink-panel overflow-hidden border border-gold-deep/40;
+  }
+  .xp-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-gold-deep via-gold to-gold-glow;
+    background-size: 200% 100%;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-body font-semibold rounded-md px-5 py-2.5 transition-all duration-100 active:translate-y-0.5;
+  }
+  .btn-primary {
+    @apply bg-gold text-parchment-text shadow-[0_4px_0_theme(colors.gold.deep)] active:shadow-[0_1px_0_theme(colors.gold.deep)];
+  }
+  .btn-secondary {
+    @apply bg-ink-light text-parchment shadow-[0_4px_0_rgba(0,0,0,0.4)] active:shadow-[0_1px_0_rgba(0,0,0,0.4)];
+  }
+  .btn-danger {
+    @apply bg-coral text-parchment shadow-[0_4px_0_theme(colors.coral.deep)] active:shadow-[0_1px_0_theme(colors.coral.deep)];
+  }
+  .btn:disabled {
+    @apply opacity-50 pointer-events-none;
+  }
+
+  .input {
+    @apply w-full rounded-md border-2 border-ink-light bg-ink-panel px-4 py-2.5 text-parchment placeholder:text-parchment/40 focus:outline-none focus:border-gold transition-colors;
+  }
+
+  .level-badge {
+    @apply flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-gold-glow via-gold to-gold-deep text-ink font-display text-xl border-4 border-ink-panel;
+  }
+
+  .panel {
+    @apply bg-ink-light/60 border border-white/5 rounded-xl p-5;
+  }
+}
