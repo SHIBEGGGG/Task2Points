@@ -107,16 +107,17 @@ model QuizAttempt {
 // approved). The unique constraint stops a user completing the exact same
 // task twice and farming double XP - the backend checks this before granting XP.
 model TaskCompletion {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  taskId      Int
-  xpAwarded   Int
-  completedAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  taskId         Int
+  xpAwarded      Int
+  completionDate DateTime // truncated to midnight UTC - the "day" this completion counts for
+  completedAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, taskId])
+  @@unique([userId, taskId, completionDate])
   @@index([userId])
 }
 
