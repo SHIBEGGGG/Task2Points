@@ -1,9 +1,6 @@
 const prisma = require('../config/prisma');
+const { startOfTodayUTC } = require('../services/xp.service');
 
-// Creates a PENDING PhotoSubmission. No XP is granted here - that only
-// happens if/when an admin approves it (see admin.controller.js). Blocks a
-// duplicate pending submission for the same task so a user can't spam the
-// review queue while waiting on an existing one.
 async function submitPhoto(req, res) {
   const taskId = Number(req.body.taskId);
   if (!taskId) return res.status(400).json({ error: 'taskId is required' });
@@ -14,11 +11,13 @@ async function submitPhoto(req, res) {
     return res.status(404).json({ error: 'Photo task not found' });
   }
 
-  const alreadyCompleted = await prisma.taskCompletion.findUnique({
-    where: { userId_taskId: { userId: req.user.id, taskId } },
+  const alreadyCompletedToday = await prisma.taskCompletion.findUnique({
+    where: {
+      userId_taskId_completionDate: { userId: req.user.id, taskId, completionDate: startOfTodayUTC() },
+    },
   });
-  if (alreadyCompleted) {
-    return res.status(409).json({ error: 'You have already completed this task' });
+  if (alreadyCompletedToday) {
+    return res.status(409).json({ error: 'You have already completed this task today' });
   }
 
   const existingPending = await prisma.photoSubmission.findFirst({
@@ -40,7 +39,6 @@ async function submitPhoto(req, res) {
   res.status(201).json(submission);
 }
 
-// A user's own submission history, so they can see what's pending/approved/rejected.
 async function myMedia(req, res) {
   const submissions = await prisma.photoSubmission.findMany({
     where: { userId: req.user.id },
