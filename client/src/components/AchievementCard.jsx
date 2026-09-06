@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import IconBadge from './IconBadge.jsx';
+import PixelIcon from './PixelIcon.jsx';
 
 export default function AchievementCard({ icon, name, description, unlocked, unlockedAt, justUnlocked }) {
   return (
@@ -11,11 +11,11 @@ export default function AchievementCard({ icon, name, description, unlocked, unl
     >
       <div
         className={`panel flex items-start gap-3 transition-opacity ${
-          unlocked ? 'border-gold/40' : 'opacity-45 grayscale'
+          unlocked ? 'border-gold/40' : 'opacity-40 grayscale'
         }`}
       >
-        <div className="w-9 h-9 rounded-full border-2 border-gold/50 flex items-center justify-center text-gold shrink-0">
-          {unlocked ? <IconBadge name={icon} /> : <IconBadge name="shield" />}
+        <div className="text-gold shrink-0">
+          <PixelIcon name={unlocked ? icon : 'shield'} size={36} animate={unlocked} />
         </div>
         <div>
           <h3 className="font-display text-base tracking-wide">{name}</h3>

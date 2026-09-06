@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import IconBadge from './IconBadge.jsx';
+import PixelIcon from './PixelIcon.jsx';
 
 export default function QuestTicket({ iconName, typeLabel, xpValue, locked, stamp, children }) {
   return (
@@ -11,7 +11,7 @@ export default function QuestTicket({ iconName, typeLabel, xpValue, locked, stam
       className={`quest-ticket ${locked ? 'quest-ticket--locked' : ''}`}
     >
       <div className="quest-ticket__stub">
-        <IconBadge name={iconName} className="text-parchment" />
+        <PixelIcon name={iconName} size={28} animate={!locked} className="text-parchment" />
         <span className="font-mono text-[10px] uppercase tracking-widest text-center leading-tight">
           {typeLabel}
         </span>

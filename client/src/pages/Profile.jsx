@@ -4,6 +4,7 @@ import api from '../services/api';
 import Layout from '../components/Layout.jsx';
 import LevelBadge from '../components/LevelBadge.jsx';
 import XPBar from '../components/XPBar.jsx';
+import PixelIcon from '../components/PixelIcon.jsx';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
@@ -62,20 +63,24 @@ export default function Profile() {
       </div>
 
       <section className="mb-10">
-        <h2 className="text-xl mb-3">Badges Earned</h2>
+        <h2 className="text-xl mb-4">Badge Case</h2>
         {profile.achievements.length === 0 ? (
           <p className="text-parchment/50 text-sm">No achievements unlocked yet.</p>
         ) : (
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
             {profile.achievements.map((a) => (
-              <div key={a.id} className="panel flex items-center gap-2 !py-2">
-                <span className="text-xl">{a.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold">{a.name}</p>
-                  <p className="font-mono text-[10px] text-parchment/50">
-                    {new Date(a.unlockedAt).toLocaleDateString()}
-                  </p>
+              <div
+                key={a.id}
+                className="panel flex flex-col items-center text-center gap-2 !py-4"
+                title={a.description}
+              >
+                <div className="text-gold">
+                  <PixelIcon name={a.icon} size={48} />
                 </div>
+                <p className="text-xs font-semibold leading-tight">{a.name}</p>
+                <p className="font-mono text-[9px] text-parchment/50">
+                  {new Date(a.unlockedAt).toLocaleDateString()}
+                </p>
               </div>
             ))}
           </div>
