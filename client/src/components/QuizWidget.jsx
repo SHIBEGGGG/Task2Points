@@ -25,7 +25,7 @@ export default function QuizWidget({ task, onCompleted }) {
     });
     setResult(res.data);
     if (res.data.correct && res.data.xpAwarded > 0) {
-      onCompleted?.();
+      onCompleted?.(res.data);
     }
   }
 

@@ -7,6 +7,10 @@ import Layout from '../components/Layout.jsx';
 import XPBar from '../components/XPBar.jsx';
 import LevelBadge from '../components/LevelBadge.jsx';
 import QuestTicket from '../components/QuestTicket.jsx';
+import RewardOverlay from '../components/RewardOverlay.jsx';
+
+const SEEN_ACHIEVEMENTS_KEY = 'quest-log:seen-achievement-ids';
+const SEEN_LEVEL_KEY = 'quest-log:seen-level';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -15,6 +19,8 @@ export default function Dashboard() {
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [newAchievements, setNewAchievements] = useState([]);
+  const [newLevel, setNewLevel] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -27,6 +33,17 @@ export default function Dashboard() {
         setProfile(profileRes.data);
         setTodaysTasks(tasksRes.data);
         setPendingSubmissions(mineRes.data.filter((s) => s.status === 'PENDING'));
+
+        const seenIds = new Set(JSON.parse(localStorage.getItem(SEEN_ACHIEVEMENTS_KEY) || '[]'));
+        const unseen = profileRes.data.achievements.filter((a) => !seenIds.has(a.id));
+        if (unseen.length > 0) {
+          setNewAchievements(unseen);
+        }
+
+        const seenLevel = Number(localStorage.getItem(SEEN_LEVEL_KEY) || 1);
+        if (profileRes.data.level.level > seenLevel) {
+          setNewLevel(profileRes.data.level.level);
+        }
       } catch (err) {
         setError('Could not load your dashboard. Try refreshing.');
       } finally {
@@ -36,6 +53,21 @@ export default function Dashboard() {
     load();
   }, []);
 
+  function dismissAchievement(id) {
+    setNewAchievements((prev) => {
+      const remaining = prev.filter((a) => a.id !== id);
+      const allSeen = new Set(JSON.parse(localStorage.getItem(SEEN_ACHIEVEMENTS_KEY) || '[]'));
+      allSeen.add(id);
+      localStorage.setItem(SEEN_ACHIEVEMENTS_KEY, JSON.stringify([...allSeen]));
+      return remaining;
+    });
+  }
+
+  function dismissLevelUp() {
+    if (newLevel) localStorage.setItem(SEEN_LEVEL_KEY, String(newLevel));
+    setNewLevel(null);
+  }
+
   if (error) {
     return (
       <Layout>
@@ -43,7 +75,6 @@ export default function Dashboard() {
       </Layout>
     );
   }
-
 
   if (loading) {
     return (
@@ -55,6 +86,13 @@ export default function Dashboard() {
 
   return (
     <Layout>
+      <RewardOverlay
+        newAchievements={newAchievements}
+        newLevel={newLevel}
+        onDismissAchievement={dismissAchievement}
+        onDismissLevelUp={dismissLevelUp}
+      />
+
       <div className="flex items-center gap-4 mb-8">
         <LevelBadge level={profile.level.level} />
         <div className="flex-1">
