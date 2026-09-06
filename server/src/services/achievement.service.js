@@ -1,12 +1,5 @@
 const prisma = require('../config/prisma');
 
-// Checks every achievement the user hasn't unlocked yet against their
-// current stats, and unlocks any they now qualify for. Called after every
-// XP grant. Because unlockCondition is JSON, adding a new achievement type
-// later just means adding a new `case` here - no schema change needed.
-//
-// Must be passed a `tx` (a Prisma transaction client) so this runs as part
-// of the same atomic transaction as the XP grant that triggered it.
 async function checkAndUnlockAchievements(tx, userId) {
   const [user, tasksCompletedCount, quizCorrectCount, alreadyUnlocked, allAchievements] =
     await Promise.all([
@@ -49,8 +42,10 @@ function statFor(type, { user, tasksCompletedCount, quizCorrectCount }) {
       return tasksCompletedCount;
     case 'quizCorrect':
       return quizCorrectCount;
+    case 'streak':
+      return user.currentStreak;
     default:
-      return null; // unknown condition type - safely never unlocks
+      return null;
   }
 }
 

@@ -100,7 +100,7 @@ export default function AdminDashboard() {
                   <p className="font-semibold">{s.task.title}</p>
                   <p className="text-sm text-parchment-text/70 mb-2">by {s.user.username}</p>
                   <img
-                    src={`${apiBase}${s.photoUrl}`}
+                    src={s.photoUrl.startsWith('http') ? s.photoUrl : `${apiBase}${s.photoUrl}`}
                     alt="submission proof"
                     className="w-full max-h-48 object-cover rounded-md mb-3"
                   />

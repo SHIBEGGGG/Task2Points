@@ -1,8 +1,6 @@
 import { motion } from 'framer-motion';
+import IconBadge from './IconBadge.jsx';
 
-// Locked achievements render as a dim silhouette. Unlocked ones get a
-// gold-bordered card. The `justUnlocked` flag (pass true right after the
-// unlock happens) plays a full 3D flip reveal, like turning over a trading card.
 export default function AchievementCard({ icon, name, description, unlocked, unlockedAt, justUnlocked }) {
   return (
     <motion.div
@@ -16,7 +14,9 @@ export default function AchievementCard({ icon, name, description, unlocked, unl
           unlocked ? 'border-gold/40' : 'opacity-45 grayscale'
         }`}
       >
-        <span className="text-3xl leading-none">{unlocked ? icon : '🔒'}</span>
+        <div className="w-9 h-9 rounded-full border-2 border-gold/50 flex items-center justify-center text-gold shrink-0">
+          {unlocked ? <IconBadge name={icon} /> : <IconBadge name="shield" />}
+        </div>
         <div>
           <h3 className="font-display text-base tracking-wide">{name}</h3>
           <p className="text-sm text-parchment/70">{description}</p>
