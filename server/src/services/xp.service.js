@@ -1,8 +1,6 @@
 const prisma = require('../config/prisma');
 const { checkAndUnlockAchievements } = require('./achievement.service');
 
-// Custom error so controllers can tell "already completed" apart from a
-// generic 500 and return a proper 409 to the frontend.
 class AlreadyCompletedError extends Error {
   constructor(message) {
     super(message);
@@ -11,17 +9,14 @@ class AlreadyCompletedError extends Error {
   }
 }
 
-// The ONLY function in the app that is allowed to grant XP for completing a
-// task. It always looks up the XP value from the Task row in the database -
-// it never trusts a value from the request body. Everything happens inside
-// a single database transaction so a completion record, XP transaction, and
-// updated total either all succeed or all roll back together.
-//
-// The @@unique([userId, taskId]) constraint on TaskCompletion is what
-// actually prevents double-completion even under concurrent requests -
-// Postgres itself rejects the second insert, so this is safe against race
-// conditions, not just a JS-level check.
+function startOfTodayUTC() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
 async function grantXpForTaskCompletion(userId, taskId, reason) {
+  const completionDate = startOfTodayUTC();
+
   return prisma.$transaction(async (tx) => {
     const task = await tx.task.findUnique({ where: { id: taskId } });
     if (!task || !task.isActive) {
@@ -32,12 +27,11 @@ async function grantXpForTaskCompletion(userId, taskId, reason) {
 
     try {
       await tx.taskCompletion.create({
-        data: { userId, taskId, xpAwarded: task.xpValue },
+        data: { userId, taskId, xpAwarded: task.xpValue, completionDate },
       });
     } catch (err) {
-      // Prisma unique constraint violation code
       if (err.code === 'P2002') {
-        throw new AlreadyCompletedError('You have already completed this task');
+        throw new AlreadyCompletedError('You have already completed this task today');
       }
       throw err;
     }
@@ -57,4 +51,4 @@ async function grantXpForTaskCompletion(userId, taskId, reason) {
   });
 }
 
-module.exports = { grantXpForTaskCompletion, AlreadyCompletedError };
+module.exports = { grantXpForTaskCompletion, AlreadyCompletedError, startOfTodayUTC };
