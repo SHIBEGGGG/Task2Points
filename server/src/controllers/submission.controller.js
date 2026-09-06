@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const cloudinary = require('../config/cloudinary');
 const { startOfTodayUTC } = require('../services/xp.service');
 
 async function submitPhoto(req, res) {
@@ -27,11 +28,17 @@ async function submitPhoto(req, res) {
     return res.status(409).json({ error: 'You already have a pending submission for this task' });
   }
 
+  // Build the delivery URL explicitly from the public_id via the Cloudinary
+  // SDK, rather than trusting req.file.path - some versions of
+  // multer-storage-cloudinary put the raw public_id there instead of the
+  // full secure_url, which produces a broken link if used directly.
+  const photoUrl = cloudinary.url(req.file.filename, { secure: true });
+
   const submission = await prisma.photoSubmission.create({
     data: {
       userId: req.user.id,
       taskId,
-      photoUrl: `/uploads/${req.file.filename}`,
+      photoUrl,
       status: 'PENDING',
     },
   });
